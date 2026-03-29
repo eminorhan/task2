@@ -1,0 +1,112 @@
+{
+    "jrc_mus-liver": [
+        {
+            "crop_id": "mus_liver_1",
+            "z": 1000,
+            "y_min": 2048,
+            "y_max": 4096,
+            "x_min": 2048,
+            "x_max": 4096
+        },
+        {
+            "crop_id": "mus_liver_2",
+            "z": 4000,
+            "y_min": 2048,
+            "y_max": 4096,
+            "x_min": 2048,
+            "x_max": 4096
+        },
+        {
+            "crop_id": "mus_liver_3",
+            "z": 7000,
+            "y_min": 2048,
+            "y_max": 4096,
+            "x_min": 2048,
+            "x_max": 4096
+        }
+    ],
+    "jrc_jurkat-1": [
+        {
+            "crop_id": "jurkat_1_1",
+            "z": 3000,
+            "y_min": 0,
+            "y_max": 2048,
+            "x_min": 2048,
+            "x_max": 4096,
+            "queries": [
+                {
+                    "query_id": "q1",
+                    "y_center": 1062,
+                    "x_center": 3113
+                },
+                {
+                    "query_id": "q2",
+                    "y_center": 960,
+                    "x_center": 3177
+                },
+                {
+                    "query_id": "q3",
+                    "y_center": 1167,
+                    "x_center": 3068
+                },
+                {
+                    "query_id": "q4",
+                    "y_center": 911,
+                    "x_center": 3512
+                },
+                {
+                    "query_id": "q5",
+                    "y_center": 975,
+                    "x_center": 3508
+                },
+                {
+                    "query_id": "q6",
+                    "y_center": 1175,
+                    "x_center": 3775
+                }
+            ]
+        },
+        {
+            "crop_id": "jurkat_1_2",
+            "z": 5000,
+            "y_min": 512,
+            "y_max": 2560,
+            "x_min": 0,
+            "x_max": 2048
+        },
+        {
+            "crop_id": "jurkat_1_3",
+            "z": 7000,
+            "y_min": 0,
+            "y_max": 2048,
+            "x_min": 2048,
+            "x_max": 4096
+        }
+    ],
+    "jrc_mus-pancreas-3": [
+        {
+            "crop_id": "mus_pancreas_3_1",
+            "z": 250,
+            "y_min": 0,
+            "y_max": 2048,
+            "x_min": 0,
+            "x_max": 2048
+        },
+        {
+            "crop_id": "mus_pancreas_3_2",
+            "z": 1000,
+            "y_min": 0,
+            "y_max": 2048,
+            "x_min": 0,
+            "x_max": 2048
+        },
+        {
+            "crop_id": "mus_pancreas_3_3",
+            "z": 1750,
+            "y_min": 0,
+            "y_max": 2048,
+            "x_min": 0,
+            "x_max": 2048
+        }
+    ]
+}
