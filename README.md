@@ -1,11 +1,4 @@
 ## Embedding experiments with DINOv3 models on EM images from OpenOrganelle
-
-<pre style="background-color: #1e1e1e; color: #cccccc; padding: 10px; border-radius: 5px; font-family: monospace;">
-<span style="color: #4CAF50;">(task2venv) ~$</span> mkdir -p torch_hub/checkpoints
-<span style="color: #4CAF50;">(task2venv) ~$</span> cd torch_hub/checkpoints
-<span style="color: #4CAF50;">(task2venv) ~/torch_hub/checkpoints$</span> wget -O dinov3.pth "DOWNLOAD_URL"
-</pre>
-
 ### Setup
 * Create a new python `venv` and activate it (or feel free to use your own favorite project manager instead):
 ```console
