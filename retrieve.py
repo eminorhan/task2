@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 
 
-def extract_queries(embeddings_dict, crop_config, mode="pixel", patch_size=16):
+def extract_queries(embeddings_dict, crop_config, embed_mode="pixel", patch_size=16):
     """
     Iterates through the JSON config, translates coordinates, 
     and extracts all query vectors into a structured nested dictionary.
@@ -40,7 +40,7 @@ def extract_queries(embeddings_dict, crop_config, mode="pixel", patch_size=16):
                 x_local = q["x_center"] - x_min
                 
                 # Step B: Local Crop -> Embedding Space
-                if mode == "patch":
+                if embed_mode == "patch":
                     y_emb = y_local // patch_size
                     x_emb = x_local // patch_size
                 else: # "pixel" mode

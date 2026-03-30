@@ -1,9 +1,9 @@
 import zarr
-import matplotlib.pyplot as plt
-from pathlib import Path
 import json
 import torch
 import torch.nn.functional as F
+import matplotlib.pyplot as plt
+from pathlib import Path
 
 from retrieve import compute_similarity
 
@@ -86,7 +86,7 @@ def plot_retrieval_results(
             
             # 3. Plotting
             ax.imshow(raw_img, cmap='gray')
-            im = ax.imshow(sim_map_upscaled, cmap='magma', alpha=0.4, vmin=0.0, vmax=1.0)
+            im = ax.imshow(sim_map_upscaled, cmap='viridis', alpha=0.4, vmin=0.0, vmax=1.0)
             
             # 4. Plot Query Locations
             if "queries" in crop:

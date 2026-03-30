@@ -7,12 +7,13 @@ from embed import embed_all
 from retrieve import extract_queries
 from visualize import plot_retrieval_results, select_queries
 
-# Backbone name -> path mapping (you can add a few more DINOv3 checkpoints below)
+# Backbone name -> file name mapping (you can add a few more DINOv3 checkpoints below)
 BACKBONE_DICT = {
     "dinov3_vit7b16": "dinov3_vit7b16_pretrain_lvd1689m-a955f4ea.pth",
     "dinov3_vith16plus": "dinov3_vith16plus_pretrain_lvd1689m-7c1da9a5.pth",
     "dinov3_vitl16": "dinov3_vitl16_pretrain_lvd1689m-8aa4cbdd.pth",
     "dinov3_vitb16": "dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth",
+    # "dinov3_vitl16": "dinov3_vitl16_pretrain_sat493m-eadcf0ff.pth"
 }
 
 if __name__ == "__main__":
@@ -26,7 +27,7 @@ if __name__ == "__main__":
     # --- Embedding arguments ---
     parser.add_argument("--dinov3_repo_path", type=str, default="../dinov3", help="Local DINOv3 repo path.")
     parser.add_argument("--torch_hub_path", type=str, default="../torch_hub", help="Local Torch Hub path (where the checkpoints are stored).")
-    parser.add_argument("--backbone", type=str, default="dinov3_vitl16", help="Name of the DINOv3 backbone.")
+    parser.add_argument("--backbone", type=str, default="dinov3_vith16plus", help="Name of the DINOv3 backbone.")
     parser.add_argument("--embed_mode", type=str, choices=["pixel", "patch"], default="patch", help="Embedding mode (per pixel or per patch).")
     parser.add_argument("--patch_size", type=int, default=16, help="Patch size of the model (16 for all DINOv3 backbones).")
         
@@ -34,6 +35,8 @@ if __name__ == "__main__":
     
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Running on device: {device}")
+
+    os.makedirs("visuals", exist_ok=True)  # Create a "visuals" directory for dumping images
     
     # Full path where the pretrained .pth checkpoint is stored
     weights_path = os.path.join(args.torch_hub_path, "checkpoints", BACKBONE_DICT[args.backbone])
@@ -68,7 +71,7 @@ if __name__ == "__main__":
     )
 
     # Extract all queries 
-    query_dict = extract_queries(embeddings_dict, crop_config, mode=args.embed_mode, patch_size=args.patch_size)
+    query_dict = extract_queries(embeddings_dict, crop_config, embed_mode=args.embed_mode, patch_size=args.patch_size)
 
     # === Single query example ===
     single_query = select_queries(query_dict, "jrc_jurkat-1", "jurkat_1_1", ["q1"])
@@ -78,7 +81,7 @@ if __name__ == "__main__":
         embeddings_dict=embeddings_dict,
         crop_config=crop_config,
         base_data_dir=args.data_dir,
-        output_filename="single_query_example.jpeg"
+        output_filename=f"visuals/single_query_{args.backbone}_{args.embed_mode}.jpeg"
     )
     # ===================================
 
@@ -90,8 +93,8 @@ if __name__ == "__main__":
         embeddings_dict=embeddings_dict,
         crop_config=crop_config,
         base_data_dir=args.data_dir,
-        output_filename="multi_query_avg_example.jpeg",
-        method="average"
+        method="average",
+        output_filename=f"visuals/multi_query_avg_{args.backbone}_{args.embed_mode}.jpeg"
     )
     # ===================================
 
@@ -103,7 +106,7 @@ if __name__ == "__main__":
         embeddings_dict=embeddings_dict,
         crop_config=crop_config,
         base_data_dir=args.data_dir,
-        output_filename="multi_query_maxsim_example.jpeg",
-        method="maxsim"
+        method="maxsim",
+        output_filename=f"visuals/multi_query_maxsim_{args.backbone}_{args.embed_mode}.jpeg"
     )
     # ===================================

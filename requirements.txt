@@ -1,0 +1,5 @@
+matplotlib==3.10.8
+numpy==1.24.4
+s3fs==2025.9.0
+torch==2.9.1+cu129
+zarr==2.18.4

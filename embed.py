@@ -8,7 +8,7 @@ import torch.nn.functional as F
 
 
 def embed_single(crop_tensor, model, patch_size=16, embed_mode="pixel"):
-    """Passes a single padded image crop through DINOv3."""
+    """Passes a single padded image crop through a DINOv3 model."""
     _, _, H, W = crop_tensor.shape
     
     with torch.no_grad():
@@ -52,7 +52,7 @@ def embed_all(
     for volume_name, crops in crop_config.items():
         print(f"\n--- Processing volume: {volume_name} ---")
         
-        # Resolve dynamic dataset path
+        # Resolve dataset path
         em_dir = Path(data_dir) / volume_name / f"{volume_name}.zarr" / "recon-1" / "em"
         modality_dirs = list(em_dir.glob("fibsem-*")) + list(em_dir.glob("tem-*"))
         
