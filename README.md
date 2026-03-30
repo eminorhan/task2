@@ -2,13 +2,13 @@
 
 ### Setup
 * Create a new python `venv` and activate it (or feel free to use your own favorite project manager instead):
-```bash
+```console
 ~$ python -m venv task2venv
 ~$ source task2venv/bin/activate
 ```
 
 * Clone this repo and install the required dependencies:
-```bash
+```console
 (task2venv) ~$ git clone https://github.com/eminorhan/task2.git
 (task2venv) ~$ cd task2
 (task2venv) ~/task2$ pip install -r requirements.txt
@@ -22,23 +22,23 @@ We will use the following volumes from [OpenOrganelle](https://openorganelle.jan
 * `jrc_mus-pancreas-3` ([neuroglancer link](https://neuroglancer-demo.appspot.com/#!%7B%22dimensions%22:%7B%22x%22:%5B1e-9%2C%22m%22%5D%2C%22y%22:%5B1e-9%2C%22m%22%5D%2C%22z%22:%5B1e-9%2C%22m%22%5D%7D%2C%22position%22:%5B9598.5%2C9838.5%2C4118.5%5D%2C%22crossSectionOrientation%22:%5B0%2C1%2C0%2C0%5D%2C%22crossSectionScale%22:50%2C%22projectionOrientation%22:%5B0%2C1%2C0%2C0%5D%2C%22projectionScale%22:65536%2C%22layers%22:%5B%7B%22type%22:%22image%22%2C%22source%22:%22zarr://s3://janelia-cosem-datasets/jrc_mus-pancreas-3/jrc_mus-pancreas-3.zarr/recon-1/em/fibsem-uint16%22%2C%22tab%22:%22source%22%2C%22opacity%22:1%2C%22blend%22:%22additive%22%2C%22shader%22:%22#uicontrol%20invlerp%20normalized%28range=%5B955%2C%20658%5D%2C%20window=%5B0%2C%202000%5D%29%5Cn#uicontrol%20vec3%20color%20color%28default=%5C%22white%5C%22%29%5Cnvoid%20main%28%29%7BemitRGB%28color%20%2A%20normalized%28%29%29%3B%7D%22%2C%22name%22:%22fibsem-uint16%22%7D%5D%2C%22selectedLayer%22:%7B%22visible%22:true%2C%22layer%22:%22fibsem-uint16%22%7D%2C%22crossSectionBackgroundColor%22:%22#000000%22%2C%22layout%22:%22xy%22%7D))
 
 You can download these volumes with the [`download.py`](download.py) script provided here, *e.g.*:
-```bash
+```console
 (task2venv) ~/task2$ python -u download.py
 ```
 This script implements several robust downloading features, such as graceful resumption of partial downloads and download retries with exponential backoff in case of connection failures. By default, this script will create a new directory called `data` and download the volumes under it.
 
 ### Downloading the pretrained DINOv3 checkpoints
 First, copy my own clone of the DINOv3 repository:
-```bash
+```console
 (task2venv) ~$ git clone https://github.com/eminorhan/dinov3.git
 ```
 This version implements a few extensions to the original [DINOv3](https://github.com/facebookresearch/dinov3) repo, such 3D backbones and FlashAttention-3 for Hopper GPUs (although we won't really need to use these features for the demos below).
 
 Then, you will need to obtain the download links for the pretrained checkpoints from Meta, as described [here](https://github.com/facebookresearch/dinov3) (note that this requires submitting the form [here](https://ai.meta.com/resources/models-and-libraries/dinov3-downloads/) to request access). Once you have the download links, create a new Torch Hub checkpoints directory and download the checkpoints there (alternatively, you can use your own existing Torch Hub directory here, if you know where it is), *e.g.* using `wget`:
-```bash
+```console
 (task2venv) ~$ mkdir -p torch_hub/checkpoints
 (task2venv) ~$ cd torch_hub/checkpoints
-(task2venv) ~torch_hub/checkpoints$ wget -0 dinov3_vitl16_pretrain_lvd1689m-8aa4cbdd.pth "DOWNLOAD_URL"
+(task2venv) ~torch_hub/checkpoints$ wget -O dinov3_vitl16_pretrain_lvd1689m-8aa4cbdd.pth "DOWNLOAD_URL"
 ```
 For the demos below, you don't have to download all checkpoints, `dinov3_vitl16_pretrain_lvd1689m-8aa4cbdd.pth` should be sufficient.
 
@@ -47,13 +47,13 @@ The embedding functions are implemented in [`embed.py`](embed.py).
 
 **Patch size selection:** We will use the highest resolution EM data contained in `s0` to compute the embeddings. The volumes were imaged at a resolution of ~4-8 nm (per dimension) and mitochondria have typical lengths of ~1-4 μm and diameters of ~0.2-1 μm, so even though data at coarser levels (*e.g.* `s1` or `s2`) can still have enough detail to resolve many of the structural features of individual mitochondria, we will achieve the largest possible degree of spatial detail by using the highest resolution data in `s0`. 
 
-**Per-patch & per-pixel (dense) embeddings:** By passing images through DINOv3 models, we can obtain per-patch embeddings (the common patch size for all DINOv3 models is 16x16 pixels). For an image of size `(H, W)`, this corresponds to an embedding size of `(D, H // patch_size, W // patch_size)`. In order to obtain per-pixel or dense embeddings, we can simple upsample the per-patch embeddings by interpolation, *e.g.*:
+**Per-patch and per-pixel (dense) embeddings:** By passing images through DINOv3 models, we can obtain per-patch embeddings (the common patch size for all DINOv3 models is 16x16 pixels). For an image of size `(H, W)`, this corresponds to an embedding size of `(D, H // patch_size, W // patch_size)`. In order to obtain per-pixel or dense embeddings, we can simple upsample the per-patch embeddings by interpolation, *e.g.*:
 ```python
 pixel_embeddings = F.interpolate(patch_embeddings, size=(H, W), mode="bilinear", align_corners=False)
 ```
 Note that this will interpolate each embedding dimension independently. This will produce a per-pixel embedding of size `(D, H, W)` for a given image. The embedding functions in [`embed.py`](embed.py) implement both per-patch and per-pixel embeddings, which can controlled by the `embed_mode` parameter (`'pixel'` or `'patch'`).
 
-### Embedding-based retrieval & visualization
+### Embedding-based retrieval and visualization
 The [`run.py`](run.py) script is the main script that will run the embedding-based similarity analysis and generate the resulting visualizations. For this analysis, we selected three regions of interest from each of the three volumes, containing multiple mitochondria as well as displaying other interesting, rich subcellular structures. These regions were selected through manual exploration of the neuroglancer views of each volume. In addition, we identified several query locations containing mitchondria, to be used as query vectors in our embedding-based similarity analysis. The spatial coordinates of these regions of interest and queries are provided in the [`selected_crops.json`](selected_crops.json) file.
 
 As our first example, we can take a look at the following figure, which shows the embedding-based similarity maps between a query location in one of our regions of interest (represented by the red dot) and all other locations in all 9 regions of interest both within the same volume, *i.e.* `jrc_jurkat-1`, and across different volumes (different rows).
