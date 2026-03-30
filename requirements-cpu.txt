@@ -1,0 +1,14 @@
+# Set flag for CPU wheels
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# Main dependencies
+torch
+s3fs
+zarr
+matplotlib
+
+# DINOv3 dependencies
+torchvision
+torchmetrics
+datasets
+termcolor

@@ -22,7 +22,7 @@ if __name__ == "__main__":
     
     # --- Data & config arguments ---
     parser.add_argument("--config", type=str, default="selected_crops.json", help="Path to JSON config.")
-    parser.add_argument("--data_dir", type=str, default="../seg3d/data", help="Base directory containing EM volumes.")
+    parser.add_argument("--data_dir", type=str, default="data", help="Base directory containing EM volumes.")
     
     # --- Embedding arguments ---
     parser.add_argument("--dinov3_repo_path", type=str, default="../dinov3", help="Local DINOv3 repo path.")

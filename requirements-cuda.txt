@@ -1,0 +1,14 @@
+# Set flag for CUDA wheels (feel free to change CUDA version)
+--extra-index-url https://download.pytorch.org/whl/cu128
+
+# Main dependencies
+torch
+s3fs
+zarr
+matplotlib
+
+# DINOv3 dependencies
+torchvision
+torchmetrics
+datasets
+termcolor
