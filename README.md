@@ -56,7 +56,7 @@ Note that this will interpolate each embedding dimension independently. This wil
 ### Embedding-based retrieval & visualization
 The [`run.py`](run.py) script is the main script that will run the embedding-based similarity analysis and generate the resulting visualizations. For this analysis, we selected three regions of interest from each of the three volumes, containing multiple mitochondria as well as displaying other interesting, rich subcellular structures. These regions were selected through manual exploration of the neuroglancer views of each volume. In addition, we identified several query locations containing mitchondria, to be used as query vectors in our embedding-based similarity analysis. The spatial coordinates of these regions of interest and queries are provided in the [`selected_crops.json`](selected_crops.json) file.
 
-As our first example, we can take a look at the following figure, which shows the embedding-based similarity maps between a query location in one of our regions of interest (represented by the red dot) and all other locations in all 9 regions of interest (both within the same volume, *i.e.* `jrc_jurkat-1`, and across different volumes).
+As our first example, we can take a look at the following figure, which shows the embedding-based similarity maps between a query location in one of our regions of interest (represented by the red dot) and all other locations in all 9 regions of interest both within the same volume, *i.e.* `jrc_jurkat-1`, and across different volumes (different rows).
 
 **`single query:`**
 ![](visuals/single_query_dinov3_vit7b16_patch.jpeg)
@@ -73,4 +73,15 @@ The following figures show multi-query examples using the `average` and `maxsim`
 **`multi-query (maxsim):`**
 ![](visuals/multi_query_maxsim_dinov3_vit7b16_patch.jpeg)
 
+By providing more varied examples of what a mitochondrion might look like, multiple queries with the `maxsim` method generally lead to similarity maps that capture more of the mitochondria both within and across volumes.
+
+Running `run.py` will generate all three figures above for a given model and save them in a folder called `visuals`. More examples can be found in the [`visuals`](visuals) folder.
+
 ### Strategies for parameter-efficient finetuning
+To parameter efficiently finetune the DINOv3 backbones on EM image data in order to improve mitochondria detection and segmentation performance, we have again a few different options.
+
+**Training light-weight detection/segmentation heads on frozen backbones:** We can freeze a pretrained DINOv3 backbone and only train light-weight detection/segmentation heads on top of the frozen backbone, *e.g.* a linear segmentation head on top of the final feature map of the backbone or on top of the concatenation of a few different feature maps across the model layers (to be able to capture different types of visual information: more high-level *vs.* low-level). A model like this could be trained on mitochondrial segmentation masks using supervised training objectives, *e.g.* binary cross-entropy or focal loss between the per-pixel segmentation labels (mitochondrion *vs.* not) and upsampled model predictions.
+
+**Low-rank adaptation (LoRA):** Another popular approach for parameter-efficient finetuning for downstream tasks is low-rank adaptation (LoRA). In many cases, simply training a light-weight detection/segmentation head on top of the frozen backbone may not be good enough, if the downstream domain is sufficiently different from the pretraining data of the backbone. In such cases, we would need to adapt the backbone to the new domain as well. LoRA achieves this in a parameter-efficient way by adding trainable low-rank matrices to a subset of the model's own weight matrices (*i.e.* W + AB, where only A and B are trainable and AB is low-rank), *e.g.* typically the query and value projection matrices inside the self-attention layers of the model. These trainable low-rank matrices allow the backbone to adapt to the new domain in a parameter efficient way. The new LoRA weights can be trained either with self-supervised objectives, like the DINOv3 objective, or with supervised objectives as in the previous case.
+
+**Adapter modules:** Another way to adapt the backbone to a new domain in a parameter efficient way is to insert new light-weight trainable modules in between the existing modules in a backbone. Similar to LoRA, adapters typically have an hourglass-like bottleneck structure in order to reduce their parameter count: *e.g.* a down projection (projection to a lower dimensional space), followed by a nonlinear activation and then an up projection, plus a residual pathway to allow the model to be able to use its original information flow path. Similar to LoRA, adapter modules can also be trained with self-supervised or supervised objectives.
