@@ -1,3 +1,5 @@
+# -*- mode: pip-requirements -*-
+
 # Set flag for CUDA wheels (feel free to change CUDA version)
 --extra-index-url https://download.pytorch.org/whl/cu128
 
