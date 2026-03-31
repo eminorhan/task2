@@ -1,6 +1,7 @@
 ## Embedding experiments with DINOv3 models on EM images from OpenOrganelle
 ### Setup
 * Create a new python `venv` and activate it (or feel free to use your own favorite project manager instead):
+
 ```console
 ~$ python -m venv task2venv
 ~$ source task2venv/bin/activate
@@ -11,10 +12,12 @@
 (task2venv) ~$ git clone https://github.com/eminorhan/task2.git
 (task2venv) ~$ cd task2
 ```
+
 * Install the required dependencies. If you have an NVIDIA GPU:
 ```console
 (task2venv) ~/task2$ pip install -r requirements-cuda.txt
 ```
+
 * Otherwise, for the CPU only version:
 ```console
 (task2venv) ~/task2$ pip install -r requirements-cpu.txt

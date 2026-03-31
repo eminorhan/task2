@@ -2,16 +2,14 @@ import os
 import time
 import s3fs
 import concurrent.futures
+import argparse
 
 
-MAX_WORKERS = 3  # Maximum number of simultaneous downloads
-MAX_DOWNLOAD_ATTEMPTS = 5  # Maximum number of times to try downloading a single dataset
-LOCAL_ROOT_DIR = "data"  # Local root directory where the volumes will be saved
 BUCKET_NAME = 'janelia-cosem-datasets'
 VOLUMES_TO_DOWNLOAD = ['jrc_mus-pancreas-3', 'jrc_jurkat-1', 'jrc_mus-liver']
 
 
-def download_zarr_archive(s3_prefix_path, s3_filesystem, root_dir):
+def download_zarr_archive(s3_prefix_path, s3_filesystem, root_dir, max_attempts):
     """
     Downloads a Zarr archive from S3, gracefully resuming if partially downloaded.
     It verifies file integrity by checking local file sizes against remote ones.
@@ -73,9 +71,9 @@ def download_zarr_archive(s3_prefix_path, s3_filesystem, root_dir):
         os.makedirs(d, exist_ok=True)
 
     # Manual retry loop for downloading the batch of missing files
-    for attempt in range(MAX_DOWNLOAD_ATTEMPTS):
+    for attempt in range(max_attempts):
         try:
-            print(f"-> Attempt {attempt + 1}/{MAX_DOWNLOAD_ATTEMPTS} for {dataset_name}")
+            print(f"-> Attempt {attempt + 1}/{max_attempts} for {dataset_name}")
 
             s3_filesystem.get(missing_remote_files, corresponding_local_files)
 
@@ -83,22 +81,29 @@ def download_zarr_archive(s3_prefix_path, s3_filesystem, root_dir):
 
         except Exception as e:
             print(f"-> Attempt {attempt + 1} failed: {e}")
-            if attempt < MAX_DOWNLOAD_ATTEMPTS - 1:
+            if attempt < max_attempts - 1:
                 wait_time = 2 ** (attempt + 1)
                 print(f"-> Waiting {wait_time} seconds before retrying...")
                 time.sleep(wait_time)
             else:
-                return (f"Failed: Could not download files for {dataset_name} after {MAX_DOWNLOAD_ATTEMPTS} attempts.")
+                return (f"Failed: Could not download files for {dataset_name} after {max_attempts} attempts.")
 
     return f"Failed: An unexpected error occurred with {s3_source_path}."
 
 
 if __name__ == "__main__":
+    # Set up argument parsing
+    parser = argparse.ArgumentParser(description="Download EM volumes from Janelia COSEM S3 bucket.")
+    parser.add_argument("--workers", type=int, default=3, help="Maximum number of simultaneous downloads (default: 3)")
+    parser.add_argument("--attempts", type=int, default=5, help="Maximum number of times to try downloading a single dataset (default: 5)")
+    parser.add_argument("--local_root", type=str, default="data", help="Local root directory where the volumes will be saved (default: 'data')")
+    args = parser.parse_args()
+
     # Initialize the S3 file system for anonymous access
     s3 = s3fs.S3FileSystem(anon=True)
 
     # Create the local root directory
-    os.makedirs(LOCAL_ROOT_DIR, exist_ok=True)
+    os.makedirs(args.local_root, exist_ok=True)
 
     # List all top-level datasets (directories) using s3fs
     print(f"Finding datasets in the bucket '{BUCKET_NAME}'...")
@@ -115,13 +120,17 @@ if __name__ == "__main__":
         prefix_paths = []
 
     print("-" * 50)
-    print(f"Starting parallel download with up to {MAX_WORKERS} workers...")
+    print(f"Starting parallel download with up to {args.workers} workers...")
+    print(f"Saving to '{args.local_root}' with {args.attempts} max attempts per file.")
     print("-" * 50)
 
     # Use ThreadPoolExecutor to manage parallel downloads
-    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        # Pass the s3 filesystem object to each worker thread
-        futures = [executor.submit(download_zarr_archive, path, s3, LOCAL_ROOT_DIR) for path in prefix_paths]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
+        # Pass the s3 filesystem object and parsed arguments to each worker thread
+        futures = [
+            executor.submit(download_zarr_archive, path, s3, args.local_root, args.attempts) 
+            for path in prefix_paths
+        ]
         for future in concurrent.futures.as_completed(futures):
             status_message = future.result()
             print(status_message)
