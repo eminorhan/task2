@@ -7,13 +7,16 @@ from embed import embed_all
 from retrieve import extract_queries
 from visualize import plot_retrieval_results, select_queries
 
-# Backbone name -> file name mapping (you can add a few more DINOv3 checkpoints below)
+# Backbone name -> (architecture, path) mapping
 BACKBONE_DICT = {
-    "dinov3_vit7b16": "dinov3_vit7b16_pretrain_lvd1689m-a955f4ea.pth",
-    "dinov3_vith16plus": "dinov3_vith16plus_pretrain_lvd1689m-7c1da9a5.pth",
-    "dinov3_vitl16": "dinov3_vitl16_pretrain_lvd1689m-8aa4cbdd.pth",
-    "dinov3_vitb16": "dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth",
-    # "dinov3_vitl16": "dinov3_vitl16_pretrain_sat493m-eadcf0ff.pth"
+    # lvd-1689m
+    "dinov3_vit7b16_lvd1689m":    {"arch": "dinov3_vit7b16",    "path": "dinov3_vit7b16_pretrain_lvd1689m-a955f4ea.pth"},
+    "dinov3_vith16plus_lvd1689m": {"arch": "dinov3_vith16plus", "path": "dinov3_vith16plus_pretrain_lvd1689m-7c1da9a5.pth"},
+    "dinov3_vitl16_lvd1689m":     {"arch": "dinov3_vitl16",     "path": "dinov3_vitl16_pretrain_lvd1689m-8aa4cbdd.pth"},
+    "dinov3_vitb16_lvd1689m":     {"arch": "dinov3_vitb16",     "path": "dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth"},
+    # sat-493m
+    "dinov3_vitl16_sat493m":      {"arch": "dinov3_vitl16",     "path": "dinov3_vitl16_pretrain_sat493m-eadcf0ff.pth"},
+    "dinov3_vit7b16_sat493m":     {"arch": "dinov3_vit7b16",    "path": "dinov3_vit7b16_pretrain_sat493m-a6675841.pth"},
 }
 
 if __name__ == "__main__":
@@ -21,13 +24,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="End to end DINOv3 retrieval pipeline")
     
     # --- Data & config arguments ---
-    parser.add_argument("--config", type=str, default="selected_crops.json", help="Path to JSON config.")
+    parser.add_argument("--config", type=str, default="selected_crops.json", help="Path to JSON crops config.")
     parser.add_argument("--data_dir", type=str, default="data", help="Base directory containing EM volumes.")
     
     # --- Embedding arguments ---
     parser.add_argument("--dinov3_repo_path", type=str, default="../dinov3", help="Local DINOv3 repo path.")
     parser.add_argument("--torch_hub_path", type=str, default="../torch_hub", help="Local Torch Hub path (where the checkpoints are stored).")
-    parser.add_argument("--backbone", type=str, default="dinov3_vith16plus", help="Name of the DINOv3 backbone.")
+    parser.add_argument("--backbone", type=str, default="dinov3_vit7b16_sat493m", help="Name of the DINOv3 backbone.")
     parser.add_argument("--embed_mode", type=str, choices=["pixel", "patch"], default="patch", help="Embedding mode (per pixel or per patch).")
     parser.add_argument("--patch_size", type=int, default=16, help="Patch size of the model (16 for all DINOv3 backbones).")
         
@@ -35,11 +38,15 @@ if __name__ == "__main__":
     
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Running on device: {device}")
-
-    os.makedirs("visuals", exist_ok=True)  # Create a "visuals" directory for dumping images
+    
+    # Create a "visuals" directory for dumping images
+    os.makedirs("visuals", exist_ok=True)
     
     # Full path where the pretrained .pth checkpoint is stored
-    weights_path = os.path.join(args.torch_hub_path, "checkpoints", BACKBONE_DICT[args.backbone])
+    weights_path = os.path.join(args.torch_hub_path, "checkpoints", BACKBONE_DICT[args.backbone]["path"])
+
+    # Architecture name for the selected backbone
+    arch_name = BACKBONE_DICT[args.backbone]["arch"]
 
     # Set torch_hub dir
     torch.hub.set_dir(args.torch_hub_path)
@@ -47,7 +54,7 @@ if __name__ == "__main__":
     # Load the model
     model = torch.hub.load(
         args.dinov3_repo_path, 
-        args.backbone, 
+        arch_name,
         source="local", 
         weights=weights_path, 
         pretrained=True, 

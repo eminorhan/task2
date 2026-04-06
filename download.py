@@ -92,7 +92,7 @@ def download_zarr_archive(s3_prefix_path, s3_filesystem, root_dir, max_attempts)
 
 
 if __name__ == "__main__":
-    # Set up argument parsing
+
     parser = argparse.ArgumentParser(description="Download EM volumes from Janelia COSEM S3 bucket.")
     parser.add_argument("--workers", type=int, default=3, help="Maximum number of simultaneous downloads (default: 3)")
     parser.add_argument("--attempts", type=int, default=5, help="Maximum number of times to try downloading a single dataset (default: 5)")
