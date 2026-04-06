@@ -58,7 +58,30 @@ def extract_queries(embeddings_dict, crop_config, embed_mode="pixel", patch_size
     return all_queries
 
 
-def compute_similarity(query_vectors, target_embeddings, method="maxsim"):
+def select_queries(query_dict, *selections):
+    """
+    Extracts queries and assigns them a globally unique tuple key: (volume, crop, query_id).
+    Accepts multiple selections as tuples: (volume, crop) or (volume, crop, q_ids).
+    If q_ids is not provided or is None, it extracts all queries for that crop.
+    """
+    selected_queries = {}
+    
+    for selection in selections:
+        volume = selection[0]
+        crop = selection[1]
+        q_ids = selection[2] if len(selection) > 2 else None
+        
+        crop_queries = query_dict[volume][crop]
+        if q_ids is None:
+            q_ids = list(crop_queries.keys()) # Grab all available IDs
+            
+        for q_id in q_ids:
+            selected_queries[(volume, crop, q_id)] = crop_queries[q_id]
+            
+    return selected_queries
+
+
+def compute_similarity(query_vectors, target_embeddings, method="average"):
     """
     Computes cosine similarity between queries and target embeddings.
     
@@ -86,7 +109,7 @@ def compute_similarity(query_vectors, target_embeddings, method="maxsim"):
         sim_map = F.cosine_similarity(q_avg, target_embeddings, dim=0)
         
     elif method == "maxsim":
-        # Compute all similarities, then take the max at each pixel
+        # Compute all similarities, then take the max at each pixel/patch
         all_sims = []
         for i in range(N):
             q = query_vectors[i].view(D, 1, 1)

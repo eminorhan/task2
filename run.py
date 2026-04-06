@@ -4,8 +4,8 @@ import json
 import torch
 
 from embed import embed_all 
-from retrieve import extract_queries
-from visualize import plot_retrieval_results, select_queries
+from retrieve import extract_queries, select_queries, get_similarity_maps
+from visualize import plot_retrieval_results
 
 # Backbone name -> (architecture, path) mapping
 BACKBONE_DICT = {
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     
     # --- Data & config arguments ---
     parser.add_argument("--config", type=str, default="selected_crops.json", help="Path to JSON crops config.")
-    parser.add_argument("--data_dir", type=str, default="../seg3d/data", help="Base directory containing EM volumes.")
+    parser.add_argument("--data_dir", type=str, default="data", help="Base directory containing EM volumes.")
     
     # --- Embedding arguments ---
     parser.add_argument("--dinov3_repo_path", type=str, default="../dinov3", help="Local DINOv3 repo path.")
@@ -84,9 +84,11 @@ if __name__ == "__main__":
     # === Single query example ===
     single_query = select_queries(query_dict, ("jrc_jurkat-1", "jurkat_1_1", ["q1"]))
 
+    sim_maps = get_similarity_maps(single_query, embeddings_dict, crop_config)  # compute all similarity maps upfront
+
     plot_retrieval_results(
+        sim_maps=sim_maps,
         selected_queries_dict=single_query,
-        embeddings_dict=embeddings_dict,
         crop_config=crop_config,
         base_data_dir=args.data_dir,
         output_filename=f"visuals/single_query_{args.backbone}_{args.embed_mode}_{args.pretrained}.jpeg"
@@ -96,12 +98,13 @@ if __name__ == "__main__":
     # === Multi-query average example ===
     multi_query_avg = select_queries(query_dict, ("jrc_jurkat-1", "jurkat_1_1", ["q1", "q2", "q3"]))
 
+    sim_maps = get_similarity_maps(multi_query_avg, embeddings_dict, crop_config, method="average")
+
     plot_retrieval_results(
+        sim_maps=sim_maps,
         selected_queries_dict=multi_query_avg,
-        embeddings_dict=embeddings_dict,
         crop_config=crop_config,
         base_data_dir=args.data_dir,
-        method="average",
         output_filename=f"visuals/multi_query_avg_{args.backbone}_{args.embed_mode}_{args.pretrained}.jpeg"
     )
     # ===================================
@@ -109,12 +112,13 @@ if __name__ == "__main__":
     # === Multi-query maxsim example ===
     multi_query_maxsim = select_queries(query_dict, ("jrc_jurkat-1", "jurkat_1_1", ["q1", "q4", "q6"]))
 
+    sim_maps = get_similarity_maps(multi_query_maxsim, embeddings_dict, crop_config, method="maxsim")
+
     plot_retrieval_results(
+        sim_maps=sim_maps,
         selected_queries_dict=multi_query_maxsim,
-        embeddings_dict=embeddings_dict,
         crop_config=crop_config,
         base_data_dir=args.data_dir,
-        method="maxsim",
         output_filename=f"visuals/multi_query_maxsim_{args.backbone}_{args.embed_mode}_{args.pretrained}.jpeg"
     )
     # ===================================

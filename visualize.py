@@ -3,39 +3,13 @@ import json
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from retrieve import get_similarity_maps
-
-
-def select_queries(query_dict, *selections):
-    """
-    Extracts queries and assigns them a globally unique tuple key: (volume, crop, query_id).
-    Accepts multiple selections as tuples: (volume, crop) or (volume, crop, q_ids).
-    If q_ids is not provided or is None, it extracts all queries for that crop.
-    """
-    selected_queries = {}
-    
-    for selection in selections:
-        volume = selection[0]
-        crop = selection[1]
-        q_ids = selection[2] if len(selection) > 2 else None
-        
-        crop_queries = query_dict[volume][crop]
-        if q_ids is None:
-            q_ids = list(crop_queries.keys()) # Grab all available IDs
-            
-        for q_id in q_ids:
-            selected_queries[(volume, crop, q_id)] = crop_queries[q_id]
-            
-    return selected_queries
-
 
 def plot_retrieval_results(
+    sim_maps,
     selected_queries_dict, 
-    embeddings_dict, 
     crop_config,
     base_data_dir,
     output_filename="retrieval_results.jpeg",
-    method="average"
 ):
     """
     Plots a 3x3 grid of raw EM crops with overlaid similarity heatmaps and query locations.
@@ -44,8 +18,6 @@ def plot_retrieval_results(
     # Get the valid globally unique tuples to filter the red dots
     active_query_tuples = list(selected_queries_dict.keys())
 
-    # Compute all similarity maps upfront
-    sim_maps = get_similarity_maps(selected_queries_dict, embeddings_dict, crop_config, method=method)
 
     volumes = list(crop_config.keys())
     if len(volumes) != 3:
@@ -123,4 +95,4 @@ def plot_retrieval_results(
 
     plt.savefig(output_filename, format='jpeg', dpi=300, bbox_inches='tight', pad_inches=0)
     plt.close(fig) 
-    print(f"Successfully saved {method} visualization to {output_filename}")
+    print(f"Successfully saved visualization to {output_filename}")
