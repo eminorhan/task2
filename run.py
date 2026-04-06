@@ -25,12 +25,12 @@ if __name__ == "__main__":
     
     # --- Data & config arguments ---
     parser.add_argument("--config", type=str, default="selected_crops.json", help="Path to JSON crops config.")
-    parser.add_argument("--data_dir", type=str, default="data", help="Base directory containing EM volumes.")
+    parser.add_argument("--data_dir", type=str, default="../seg3d/data", help="Base directory containing EM volumes.")
     
     # --- Embedding arguments ---
     parser.add_argument("--dinov3_repo_path", type=str, default="../dinov3", help="Local DINOv3 repo path.")
     parser.add_argument("--torch_hub_path", type=str, default="../torch_hub", help="Local Torch Hub path (where the checkpoints are stored).")
-    parser.add_argument("--backbone", type=str, default="dinov3_vitl16_lvd1689m", help="Name of the DINOv3 backbone.")
+    parser.add_argument("--backbone", type=str, default="dinov3_vit7b16_lvd1689m", help="Name of the DINOv3 backbone.")
     parser.add_argument("--embed_mode", type=str, choices=["pixel", "patch"], default="patch", help="Embedding mode (per pixel or per patch).")
     parser.add_argument("--patch_size", type=int, default=16, help="Patch size of the model (16 for all DINOv3 backbones).")
     parser.add_argument("--pretrained", action=argparse.BooleanOptionalAction, default=True, help="Use pretrained weights (default: True. Use --no-pretrained to disable)")

@@ -1,11 +1,9 @@
 import zarr
 import json
-import torch
-import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from retrieve import compute_similarity
+from retrieve import get_similarity_maps
 
 
 def select_queries(query_dict, *selections):
@@ -36,18 +34,18 @@ def plot_retrieval_results(
     embeddings_dict, 
     crop_config,
     base_data_dir,
-    method="average",
-    output_filename="retrieval_results.jpeg"
+    output_filename="retrieval_results.jpeg",
+    method="average"
 ):
     """
     Plots a 3x3 grid of raw EM crops with overlaid similarity heatmaps and query locations.
     Saves the final plot directly to a high-resolution JPEG file.
     """
-    # Stack all tensors in the dict into an (N, D) tensor for similarity computation
-    query_tensor = torch.stack(list(selected_queries_dict.values()))
-    
     # Get the valid globally unique tuples to filter the red dots
     active_query_tuples = list(selected_queries_dict.keys())
+
+    # Compute all similarity maps upfront
+    sim_maps = get_similarity_maps(selected_queries_dict, embeddings_dict, crop_config, method=method)
 
     volumes = list(crop_config.keys())
     if len(volumes) != 3:
@@ -81,18 +79,8 @@ def plot_retrieval_results(
             y1, y2, x1, x2 = crop["y_min"], crop["y_max"], crop["x_min"], crop["x_max"]
             raw_img = dataset[z, y1:y2, x1:x2]
             
-            # 2. Fetch Embeddings & Compute Similarity
-            target_emb = embeddings_dict[volume_name][crop_id]
-            sim_map = compute_similarity(query_tensor, target_emb, method=method)
-            
-            # Upscale the heatmap to match the raw image resolution
-            sim_map = sim_map.unsqueeze(0).unsqueeze(0) 
-            sim_map_upscaled = F.interpolate(
-                sim_map, 
-                size=(raw_img.shape[0], raw_img.shape[1]), 
-                mode='bilinear', 
-                align_corners=False
-            ).squeeze().cpu().numpy()
+            # 2. Fetch Computed Similarity Map
+            sim_map_upscaled = sim_maps[volume_name][crop_id]
             
             # 3. Plotting
             ax.imshow(raw_img, cmap='gray')

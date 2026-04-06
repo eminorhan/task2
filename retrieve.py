@@ -99,4 +99,47 @@ def compute_similarity(query_vectors, target_embeddings, method="maxsim"):
     else:
         raise ValueError("Method must be 'average' or 'maxsim'")
         
-    return sim_map    
+    return sim_map
+
+
+def get_similarity_maps(selected_queries_dict, embeddings_dict, crop_config, method="average"):
+    """
+    Computes upscaled similarity maps for all crops in crop_config.
+    
+    Args:
+        selected_queries_dict: Dict of selected queries.
+        embeddings_dict: Dict of computed embeddings.
+        crop_config: Config mapping volumes to crops.
+        method: Similarity method ('average' or 'maxsim').
+        
+    Returns:
+        dict: { volume_name: { crop_id: sim_map_upscaled (numpy array) } }
+    """
+    query_tensor = torch.stack(list(selected_queries_dict.values()))
+    
+    sim_maps = {}
+    for volume_name, crops in crop_config.items():
+        sim_maps[volume_name] = {}
+        for crop in crops:
+            crop_id = crop["crop_id"]
+            if volume_name not in embeddings_dict or crop_id not in embeddings_dict[volume_name]:
+                continue
+                
+            target_emb = embeddings_dict[volume_name][crop_id]
+            sim_map = compute_similarity(query_tensor, target_emb, method=method)
+            
+            # Upscale the heatmap to match the raw image resolution
+            H = crop["y_max"] - crop["y_min"]
+            W = crop["x_max"] - crop["x_min"]
+            
+            sim_map = sim_map.unsqueeze(0).unsqueeze(0)
+            sim_map_upscaled = F.interpolate(
+                sim_map, 
+                size=(H, W), 
+                mode='bilinear', 
+                align_corners=False
+            ).squeeze().cpu().numpy()
+            
+            sim_maps[volume_name][crop_id] = sim_map_upscaled
+            
+    return sim_maps
