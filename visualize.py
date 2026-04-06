@@ -8,17 +8,27 @@ from pathlib import Path
 from retrieve import compute_similarity
 
 
-def select_queries(query_dict, volume, crop, q_ids=None):
+def select_queries(query_dict, *selections):
     """
     Extracts queries and assigns them a globally unique tuple key: (volume, crop, query_id).
-    If q_ids is None, it extracts all queries for that crop.
+    Accepts multiple selections as tuples: (volume, crop) or (volume, crop, q_ids).
+    If q_ids is not provided or is None, it extracts all queries for that crop.
     """
-    crop_queries = query_dict[volume][crop]
+    selected_queries = {}
     
-    if q_ids is None:
-        q_ids = list(crop_queries.keys()) # Grab all available IDs
+    for selection in selections:
+        volume = selection[0]
+        crop = selection[1]
+        q_ids = selection[2] if len(selection) > 2 else None
         
-    return {(volume, crop, q_id): crop_queries[q_id] for q_id in q_ids}
+        crop_queries = query_dict[volume][crop]
+        if q_ids is None:
+            q_ids = list(crop_queries.keys()) # Grab all available IDs
+            
+        for q_id in q_ids:
+            selected_queries[(volume, crop, q_id)] = crop_queries[q_id]
+            
+    return selected_queries
 
 
 def plot_retrieval_results(
@@ -26,8 +36,8 @@ def plot_retrieval_results(
     embeddings_dict, 
     crop_config,
     base_data_dir,
-    output_filename="retrieval_results.jpeg",
-    method="average"
+    method="average",
+    output_filename="retrieval_results.jpeg"
 ):
     """
     Plots a 3x3 grid of raw EM crops with overlaid similarity heatmaps and query locations.

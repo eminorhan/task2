@@ -30,10 +30,11 @@ if __name__ == "__main__":
     # --- Embedding arguments ---
     parser.add_argument("--dinov3_repo_path", type=str, default="../dinov3", help="Local DINOv3 repo path.")
     parser.add_argument("--torch_hub_path", type=str, default="../torch_hub", help="Local Torch Hub path (where the checkpoints are stored).")
-    parser.add_argument("--backbone", type=str, default="dinov3_vit7b16_sat493m", help="Name of the DINOv3 backbone.")
+    parser.add_argument("--backbone", type=str, default="dinov3_vitl16_lvd1689m", help="Name of the DINOv3 backbone.")
     parser.add_argument("--embed_mode", type=str, choices=["pixel", "patch"], default="patch", help="Embedding mode (per pixel or per patch).")
     parser.add_argument("--patch_size", type=int, default=16, help="Patch size of the model (16 for all DINOv3 backbones).")
-        
+    parser.add_argument("--pretrained", action=argparse.BooleanOptionalAction, default=True, help="Use pretrained weights (default: True. Use --no-pretrained to disable)")
+
     args = parser.parse_args()
     
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -57,7 +58,7 @@ if __name__ == "__main__":
         arch_name,
         source="local", 
         weights=weights_path, 
-        pretrained=True, 
+        pretrained=args.pretrained, 
         use_fa3=False
     )
     model = model.to(device)
@@ -81,19 +82,19 @@ if __name__ == "__main__":
     query_dict = extract_queries(embeddings_dict, crop_config, embed_mode=args.embed_mode, patch_size=args.patch_size)
 
     # === Single query example ===
-    single_query = select_queries(query_dict, "jrc_jurkat-1", "jurkat_1_1", ["q1"])
+    single_query = select_queries(query_dict, ("jrc_jurkat-1", "jurkat_1_1", ["q1"]))
 
     plot_retrieval_results(
         selected_queries_dict=single_query,
         embeddings_dict=embeddings_dict,
         crop_config=crop_config,
         base_data_dir=args.data_dir,
-        output_filename=f"visuals/single_query_{args.backbone}_{args.embed_mode}.jpeg"
+        output_filename=f"visuals/single_query_{args.backbone}_{args.embed_mode}_{args.pretrained}.jpeg"
     )
     # ===================================
 
     # === Multi-query average example ===
-    multi_query_avg = select_queries(query_dict, "jrc_jurkat-1", "jurkat_1_1", ["q1", "q2", "q3"])
+    multi_query_avg = select_queries(query_dict, ("jrc_jurkat-1", "jurkat_1_1", ["q1", "q2", "q3"]))
 
     plot_retrieval_results(
         selected_queries_dict=multi_query_avg,
@@ -101,12 +102,12 @@ if __name__ == "__main__":
         crop_config=crop_config,
         base_data_dir=args.data_dir,
         method="average",
-        output_filename=f"visuals/multi_query_avg_{args.backbone}_{args.embed_mode}.jpeg"
+        output_filename=f"visuals/multi_query_avg_{args.backbone}_{args.embed_mode}_{args.pretrained}.jpeg"
     )
     # ===================================
 
     # === Multi-query maxsim example ===
-    multi_query_maxsim = select_queries(query_dict, "jrc_jurkat-1", "jurkat_1_1", ["q1", "q4", "q6"])
+    multi_query_maxsim = select_queries(query_dict, ("jrc_jurkat-1", "jurkat_1_1", ["q1", "q4", "q6"]))
 
     plot_retrieval_results(
         selected_queries_dict=multi_query_maxsim,
@@ -114,6 +115,6 @@ if __name__ == "__main__":
         crop_config=crop_config,
         base_data_dir=args.data_dir,
         method="maxsim",
-        output_filename=f"visuals/multi_query_maxsim_{args.backbone}_{args.embed_mode}.jpeg"
+        output_filename=f"visuals/multi_query_maxsim_{args.backbone}_{args.embed_mode}_{args.pretrained}.jpeg"
     )
     # ===================================
