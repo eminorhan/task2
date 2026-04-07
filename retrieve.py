@@ -2,13 +2,13 @@ import torch
 import torch.nn.functional as F
 
 
-def extract_queries(embeddings_dict, crop_config, embed_mode="pixel", patch_size=16):
+def extract_queries(embeddings_dict, crop_config, embed_mode="pixel", patch_size=16, target_size=None):
     """
     Iterates through the JSON config, translates coordinates, 
     and extracts all query vectors into a structured nested dictionary.
     
     Returns:
-        dict: { volume_name: { crop_id: { query_id: tensor(D,) } } }
+        dict: { volume_name: { crop_id: { query_id: tensor(D,) } } }    
     """
     all_queries = {}
 
@@ -25,33 +25,43 @@ def extract_queries(embeddings_dict, crop_config, embed_mode="pixel", patch_size
                 continue
                 
             if "queries" not in crop or not crop["queries"]:
-                continue # Skip crops that are only used as targets, not queries
+                continue
                 
             all_queries[volume_name][crop_id] = {}
-            crop_emb = embeddings_dict[volume_name][crop_id] # Shape: (D, H, W)
+            crop_emb = embeddings_dict[volume_name][crop_id]
             
-            y_min, x_min = crop["y_min"], crop["x_min"]
+            y_min, y_max = crop["y_min"], crop["y_max"]
+            x_min, x_max = crop["x_min"], crop["x_max"]
+            
+            # --- Calculate scaling factors for target_size ---
+            orig_H, orig_W = y_max - y_min, x_max - x_min
+            if target_size is not None:
+                new_H, new_W = target_size
+                scale_y, scale_x = new_H / orig_H, new_W / orig_W
+            else:
+                new_H, new_W = orig_H, orig_W
+                scale_y, scale_x = 1.0, 1.0
+            # -------------------------------------------------
             
             for q in crop["queries"]:
                 query_id = q["query_id"]
                 
-                # Step A: Global -> Local Crop Space
-                y_local = q["y_center"] - y_min
-                x_local = q["x_center"] - x_min
+                # Step A: Global -> Local Crop Space -> Scaled Space
+                y_local = (q["y_center"] - y_min) * scale_y
+                x_local = (q["x_center"] - x_min) * scale_x
                 
-                # Step B: Local Crop -> Embedding Space
+                # Step B: Local Scaled Crop -> Embedding Space
+                # We use min() clamping to ensure rounding doesn't trigger an out-of-bounds IndexError
                 if embed_mode == "patch":
-                    y_emb = y_local // patch_size
-                    x_emb = x_local // patch_size
+                    y_emb = min(int(y_local // patch_size), (new_H // patch_size) - 1)
+                    x_emb = min(int(x_local // patch_size), (new_W // patch_size) - 1)
                 else: # "pixel" mode
-                    y_emb = y_local
-                    x_emb = x_local
+                    y_emb = min(int(round(y_local)), new_H - 1)
+                    x_emb = min(int(round(x_local)), new_W - 1)
                     
-                # Extract the 1D embedding vector: Shape (D,)
                 vec = crop_emb[:, y_emb, x_emb]
                 all_queries[volume_name][crop_id][query_id] = vec
                 
-    # Quick summary printout
     total_queries = sum(len(queries) for vols in all_queries.values() for queries in vols.values())
     print(f"Successfully extracted {total_queries} distinct query vectors.")
     

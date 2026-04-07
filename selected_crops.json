@@ -6,7 +6,24 @@
             "y_min": 2048,
             "y_max": 4096,
             "x_min": 2048,
-            "x_max": 4096
+            "x_max": 4096,
+            "queries": [
+                {
+                    "query_id": "q1",
+                    "y_center": 2625,
+                    "x_center": 3075
+                },
+                {
+                    "query_id": "q2",
+                    "y_center": 2938,
+                    "x_center": 3375
+                },
+                {
+                    "query_id": "q3",
+                    "y_center": 3438,
+                    "x_center": 3438
+                }
+            ]
         },
         {
             "crop_id": "mus_liver_2",
@@ -90,7 +107,24 @@
             "y_min": 0,
             "y_max": 2048,
             "x_min": 0,
-            "x_max": 2048
+            "x_max": 2048,
+            "queries": [
+                {
+                    "query_id": "q1",
+                    "y_center": 926,
+                    "x_center": 1200
+                },
+                {
+                    "query_id": "q2",
+                    "y_center": 1526,
+                    "x_center": 1414
+                },
+                {
+                    "query_id": "q3",
+                    "y_center": 1575,
+                    "x_center": 900
+                }
+            ]
         },
         {
             "crop_id": "mus_pancreas_3_2",

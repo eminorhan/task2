@@ -68,7 +68,7 @@ The [`run.py`](run.py) script is the main script that will run the embedding-bas
 As our first example, we can take a look at the following figure, which shows the embedding-based similarity maps between a query location (represented by the red dot) in one of our regions of interest and all other locations in all 9 regions of interest both within the same volume, *i.e.* `jrc_jurkat-1`, and across different volumes (different rows).
 
 **`single query:`**
-![](visuals/single_query_dinov3_vit7b16_patch.jpeg)
+![](visuals/single_query_dinov3_vitl16_lvd1689m_patch_True_1024.jpeg)
 
 When there are multiple queries, we have different options for computing embedding-based similarities. Perhaps the simplest option would be to average the query vectors and compute the similarity scores between the average vector and all other vectors. This option may make more sense when the query vectors are more similar to each other (*i.e.* located on the same mitochondrion), so that averaging produces a more prototypical, less noisy query. Another option, which may be more preferable when the queries are more heterogeneous (*i.e.* located on different mitochondria or on different volumes), is to compute the similarity with respect to each query separately and then take the maximum over them. This is analogous to a logical XOR between the queries and is also known as a MaxSim operator in information retrieval. 
 
@@ -77,10 +77,10 @@ The code currently implements both of these strategies, which can be controlled 
 The following figures show multi-query examples using the `average` and `maxsim` methods, respectively. The query locations are again indicated by the red dots.
 
 **`multi-query (average):`**
-![](visuals/multi_query_avg_dinov3_vit7b16_patch.jpeg)
+![](visuals/multi_query_avg_dinov3_vitl16_lvd1689m_patch_True_1024.jpeg)
 
 **`multi-query (maxsim):`**
-![](visuals/multi_query_maxsim_dinov3_vit7b16_patch.jpeg)
+![](visuals/multi_query_maxsim_dinov3_vitl16_lvd1689m_patch_True_1024.jpeg)
 
 By providing more varied examples of what a mitochondrion might look like, multiple queries with the `maxsim` method generally lead to similarity maps that capture more of the mitochondria both within and across volumes.
 

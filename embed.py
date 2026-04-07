@@ -36,23 +36,20 @@ def embed_all(
     data_dir="data",
     embed_mode="pixel",
     patch_size=16,
-    device="cpu"
+    device="cpu",
+    target_size=None
 ):
     """
     Extracts DINOv3 embeddings for specific JSON-configured crops and saves them to disk.
     """
-    
-    # Input normalization for DINOv3 backbones
     mean = torch.tensor([0.485, 0.456, 0.406], device=device).view(1, 3, 1, 1)
     std = torch.tensor([0.229, 0.224, 0.225], device=device).view(1, 3, 1, 1)
 
     extracted_features = {}
 
-    # Process all crops in config
     for volume_name, crops in crop_config.items():
         print(f"\n--- Processing volume: {volume_name} ---")
         
-        # Resolve dataset path
         em_dir = Path(data_dir) / volume_name / f"{volume_name}.zarr" / "recon-1" / "em"
         modality_dirs = list(em_dir.glob("fibsem-*")) + list(em_dir.glob("tem-*"))
         
@@ -60,7 +57,7 @@ def embed_all(
             print(f"  [!] Skipping {volume_name}: No imaging modality folder found.")
             continue
             
-        zarr_path = modality_dirs[0] / "s0"  # use highest resolution
+        zarr_path = modality_dirs[0] / "s0"
         dataset = zarr.open(str(zarr_path), mode='r')
         extracted_features[volume_name] = {}
         
@@ -72,31 +69,31 @@ def embed_all(
             
             print(f"  -> Embedding '{crop_id}' (Z:{z}, Y:{y1}-{y2}, X:{x1}-{x2})")
             
-            # Slice the numpy array directly from zarr, then normalize
             img_array = torch.from_numpy(dataset[z, y1:y2, x1:x2]).float()
             img_tensor = (img_array - img_array.min()) / (img_array.max() - img_array.min())
-                
-            # Format to (1, 3, H, W) and normalize
             img_tensor = img_tensor.unsqueeze(0).repeat(3, 1, 1).unsqueeze(0).to(device)
+            
+            # --- Possibly resize the tensor before processing ---
+            if target_size is not None:
+                img_tensor = F.interpolate(img_tensor, size=target_size, mode="bilinear", align_corners=False)
+            # ----------------------------------------------------
+
             img_tensor = (img_tensor - mean) / std
+            _, _, current_H, current_W = img_tensor.shape
             
-            _, _, orig_H, orig_W = img_tensor.shape
-            
-            # Pad to multiple of patch_size for DINOv3 architecture compatibility
-            pad_h = (patch_size - orig_H % patch_size) % patch_size
-            pad_w = (patch_size - orig_W % patch_size) % patch_size
+            # Pad to multiple of patch_size
+            pad_h = (patch_size - current_H % patch_size) % patch_size
+            pad_w = (patch_size - current_W % patch_size) % patch_size
             
             if pad_h > 0 or pad_w > 0:
                 img_tensor = F.pad(img_tensor, (0, pad_w, 0, pad_h), mode='reflect')
                 
-            # Extract features
             crop_emb = embed_single(img_tensor, model, patch_size=patch_size, embed_mode=embed_mode).cpu()
             
-            # Crop the embeddings back to the original requested dimensions
+            # Crop the embeddings back to the current (possibly resized) dimensions
             if embed_mode == "pixel" and (pad_h > 0 or pad_w > 0):
-                crop_emb = crop_emb[:, :, :orig_H, :orig_W]
+                crop_emb = crop_emb[:, :, :current_H, :current_W]
                 
-            # Store output without the batch dimension: Shape (D, H, W)
             extracted_features[volume_name][crop_id] = crop_emb.squeeze(0)
 
     print(f"\nFeature embedding complete ...")

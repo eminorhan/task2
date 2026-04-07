@@ -17,6 +17,8 @@ BACKBONE_DICT = {
     # sat-493m
     "dinov3_vitl16_sat493m":      {"arch": "dinov3_vitl16",     "path": "dinov3_vitl16_pretrain_sat493m-eadcf0ff.pth"},
     "dinov3_vit7b16_sat493m":     {"arch": "dinov3_vit7b16",    "path": "dinov3_vit7b16_pretrain_sat493m-a6675841.pth"},
+    # cellmap
+    "dinov3_vitl16_cellmap":      {"arch": "dinov3_vitl16",     "path": "dinov3_vitl16_cellmap-8aa4cbdd.pth"},
 }
 
 if __name__ == "__main__":
@@ -25,14 +27,15 @@ if __name__ == "__main__":
     
     # --- Data & config arguments ---
     parser.add_argument("--config", type=str, default="selected_crops.json", help="Path to JSON crops config.")
-    parser.add_argument("--data_dir", type=str, default="data", help="Base directory containing EM volumes.")
+    parser.add_argument("--data_dir", type=str, default="../seg3d/data", help="Base directory containing EM volumes.")
     
     # --- Embedding arguments ---
     parser.add_argument("--dinov3_repo_path", type=str, default="../dinov3", help="Local DINOv3 repo path.")
     parser.add_argument("--torch_hub_path", type=str, default="../torch_hub", help="Local Torch Hub path (where the checkpoints are stored).")
-    parser.add_argument("--backbone", type=str, default="dinov3_vit7b16_lvd1689m", help="Name of the DINOv3 backbone.")
+    parser.add_argument("--backbone", type=str, default="dinov3_vitl16_lvd1689m", help="Name of the DINOv3 backbone.")
     parser.add_argument("--embed_mode", type=str, choices=["pixel", "patch"], default="patch", help="Embedding mode (per pixel or per patch).")
     parser.add_argument("--patch_size", type=int, default=16, help="Patch size of the model (16 for all DINOv3 backbones).")
+    parser.add_argument("--input_size", type=int, default=512, help="Input size for the model.")
     parser.add_argument("--pretrained", action=argparse.BooleanOptionalAction, default=True, help="Use pretrained weights (default: True. Use --no-pretrained to disable)")
 
     args = parser.parse_args()
@@ -75,11 +78,18 @@ if __name__ == "__main__":
         data_dir=args.data_dir,
         embed_mode=args.embed_mode,
         patch_size=args.patch_size,
-        device=device
+        device=device,
+        target_size=(args.input_size, args.input_size)
     )
 
     # Extract all queries 
-    query_dict = extract_queries(embeddings_dict, crop_config, embed_mode=args.embed_mode, patch_size=args.patch_size)
+    query_dict = extract_queries(
+        embeddings_dict, 
+        crop_config, 
+        embed_mode=args.embed_mode, 
+        patch_size=args.patch_size, 
+        target_size=(args.input_size, args.input_size)
+    )
 
     # === Single query example ===
     single_query = select_queries(query_dict, ("jrc_jurkat-1", "jurkat_1_1", ["q1"]))
@@ -91,7 +101,7 @@ if __name__ == "__main__":
         selected_queries_dict=single_query,
         crop_config=crop_config,
         base_data_dir=args.data_dir,
-        output_filename=f"visuals/single_query_{args.backbone}_{args.embed_mode}_{args.pretrained}.jpeg"
+        output_filename=f"visuals/single_query_{args.backbone}_{args.embed_mode}_{args.pretrained}_{args.input_size}.jpeg"
     )
     # ===================================
 
@@ -105,7 +115,7 @@ if __name__ == "__main__":
         selected_queries_dict=multi_query_avg,
         crop_config=crop_config,
         base_data_dir=args.data_dir,
-        output_filename=f"visuals/multi_query_avg_{args.backbone}_{args.embed_mode}_{args.pretrained}.jpeg"
+        output_filename=f"visuals/multi_query_avg_{args.backbone}_{args.embed_mode}_{args.pretrained}_{args.input_size}.jpeg"
     )
     # ===================================
 
@@ -119,6 +129,26 @@ if __name__ == "__main__":
         selected_queries_dict=multi_query_maxsim,
         crop_config=crop_config,
         base_data_dir=args.data_dir,
-        output_filename=f"visuals/multi_query_maxsim_{args.backbone}_{args.embed_mode}_{args.pretrained}.jpeg"
+        output_filename=f"visuals/multi_query_maxsim_{args.backbone}_{args.embed_mode}_{args.pretrained}_{args.input_size}.jpeg"
     )
     # ===================================
+
+    # === Multi-volume multi-query maxsim example ===
+    multi_volume_multi_query_maxsim = select_queries(
+        query_dict, 
+        ("jrc_mus-liver", "mus_liver_1", ["q1", "q2", "q3"]),
+        ("jrc_jurkat-1", "jurkat_1_1", ["q1", "q4", "q6"]),
+        ("jrc_mus-pancreas-3", "mus_pancreas_3_1", ["q1", "q2", "q3"])
+    )
+
+    sim_maps = get_similarity_maps(multi_volume_multi_query_maxsim, embeddings_dict, crop_config, method="maxsim")
+
+    plot_retrieval_results(
+        sim_maps=sim_maps,
+        selected_queries_dict=multi_volume_multi_query_maxsim,
+        crop_config=crop_config,
+        base_data_dir=args.data_dir,
+        output_filename=f"visuals/multi_volume_multi_query_maxsim_{args.backbone}_{args.embed_mode}_{args.pretrained}_{args.input_size}.jpeg"
+    )
+    # ===================================
+
