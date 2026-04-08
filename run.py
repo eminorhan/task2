@@ -27,7 +27,7 @@ if __name__ == "__main__":
     
     # --- Data & config arguments ---
     parser.add_argument("--config", type=str, default="selected_crops.json", help="Path to JSON crops config.")
-    parser.add_argument("--data_dir", type=str, default="../seg3d/data", help="Base directory containing EM volumes.")
+    parser.add_argument("--data_dir", type=str, default="data", help="Base directory containing EM volumes.")
     
     # --- Embedding arguments ---
     parser.add_argument("--dinov3_repo_path", type=str, default="../dinov3", help="Local DINOv3 repo path.")
@@ -101,54 +101,53 @@ if __name__ == "__main__":
         selected_queries_dict=single_query,
         crop_config=crop_config,
         base_data_dir=args.data_dir,
-        output_filename=f"visuals/single_query_{args.backbone}_{args.embed_mode}_{args.pretrained}_{args.input_size}.jpeg",
-        plot_raw=True
+        output_filename=f"visuals/single_query_{args.backbone}_{args.embed_mode}_{args.pretrained}_{args.input_size}.jpeg"
     )
     # ===================================
 
-    # # === Multi-query average example ===
-    # multi_query_avg = select_queries(query_dict, ("jrc_jurkat-1", "jurkat_1_1", ["q1", "q2", "q3"]))
+    # === Multi-query average example ===
+    multi_query_avg = select_queries(query_dict, ("jrc_jurkat-1", "jurkat_1_1", ["q1", "q2", "q3"]))
 
-    # sim_maps = get_similarity_maps(multi_query_avg, embeddings_dict, crop_config, method="average")
+    sim_maps = get_similarity_maps(multi_query_avg, embeddings_dict, crop_config, method="average")
 
-    # plot_retrieval_results(
-    #     sim_maps=sim_maps,
-    #     selected_queries_dict=multi_query_avg,
-    #     crop_config=crop_config,
-    #     base_data_dir=args.data_dir,
-    #     output_filename=f"visuals/multi_query_avg_{args.backbone}_{args.embed_mode}_{args.pretrained}_{args.input_size}.jpeg"
-    # )
-    # # ===================================
+    plot_retrieval_results(
+        sim_maps=sim_maps,
+        selected_queries_dict=multi_query_avg,
+        crop_config=crop_config,
+        base_data_dir=args.data_dir,
+        output_filename=f"visuals/multi_query_avg_{args.backbone}_{args.embed_mode}_{args.pretrained}_{args.input_size}.jpeg"
+    )
+    # ===================================
 
-    # # === Multi-query maxsim example ===
-    # multi_query_maxsim = select_queries(query_dict, ("jrc_jurkat-1", "jurkat_1_1", ["q1", "q4", "q6"]))
+    # === Multi-query maxsim example ===
+    multi_query_maxsim = select_queries(query_dict, ("jrc_jurkat-1", "jurkat_1_1", ["q1", "q4", "q6"]))
 
-    # sim_maps = get_similarity_maps(multi_query_maxsim, embeddings_dict, crop_config, method="maxsim")
+    sim_maps = get_similarity_maps(multi_query_maxsim, embeddings_dict, crop_config, method="maxsim")
 
-    # plot_retrieval_results(
-    #     sim_maps=sim_maps,
-    #     selected_queries_dict=multi_query_maxsim,
-    #     crop_config=crop_config,
-    #     base_data_dir=args.data_dir,
-    #     output_filename=f"visuals/multi_query_maxsim_{args.backbone}_{args.embed_mode}_{args.pretrained}_{args.input_size}.jpeg"
-    # )
-    # # ===================================
+    plot_retrieval_results(
+        sim_maps=sim_maps,
+        selected_queries_dict=multi_query_maxsim,
+        crop_config=crop_config,
+        base_data_dir=args.data_dir,
+        output_filename=f"visuals/multi_query_maxsim_{args.backbone}_{args.embed_mode}_{args.pretrained}_{args.input_size}.jpeg"
+    )
+    # ===================================
 
-    # # === Multi-volume multi-query maxsim example ===
-    # multi_volume_multi_query_maxsim = select_queries(
-    #     query_dict, 
-    #     ("jrc_mus-liver", "mus_liver_1", ["q1", "q2", "q3"]),
-    #     ("jrc_jurkat-1", "jurkat_1_1", ["q1", "q4", "q6"]),
-    #     ("jrc_mus-pancreas-3", "mus_pancreas_3_1", ["q1", "q2", "q3"])
-    # )
+    # === Multi-volume multi-query maxsim example ===
+    multi_volume_multi_query_maxsim = select_queries(
+        query_dict, 
+        ("jrc_mus-liver", "mus_liver_1", ["q1", "q2", "q3"]),
+        ("jrc_jurkat-1", "jurkat_1_1", ["q1", "q4", "q6"]),
+        ("jrc_mus-pancreas-3", "mus_pancreas_3_1", ["q1", "q2", "q3"])
+    )
 
-    # sim_maps = get_similarity_maps(multi_volume_multi_query_maxsim, embeddings_dict, crop_config, method="maxsim")
+    sim_maps = get_similarity_maps(multi_volume_multi_query_maxsim, embeddings_dict, crop_config, method="maxsim")
 
-    # plot_retrieval_results(
-    #     sim_maps=sim_maps,
-    #     selected_queries_dict=multi_volume_multi_query_maxsim,
-    #     crop_config=crop_config,
-    #     base_data_dir=args.data_dir,
-    #     output_filename=f"visuals/multi_volume_multi_query_maxsim_{args.backbone}_{args.embed_mode}_{args.pretrained}_{args.input_size}.jpeg"
-    # )
-    # # ===================================
+    plot_retrieval_results(
+        sim_maps=sim_maps,
+        selected_queries_dict=multi_volume_multi_query_maxsim,
+        crop_config=crop_config,
+        base_data_dir=args.data_dir,
+        output_filename=f"visuals/multi_volume_multi_query_maxsim_{args.backbone}_{args.embed_mode}_{args.pretrained}_{args.input_size}.jpeg"
+    )
+    # ===================================
