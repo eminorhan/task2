@@ -32,10 +32,10 @@ if __name__ == "__main__":
     # --- Embedding arguments ---
     parser.add_argument("--dinov3_repo_path", type=str, default="../dinov3", help="Local DINOv3 repo path.")
     parser.add_argument("--torch_hub_path", type=str, default="../torch_hub", help="Local Torch Hub path (where the checkpoints are stored).")
-    parser.add_argument("--backbone", type=str, default="dinov3_vitl16_lvd1689m", help="Name of the DINOv3 backbone.")
+    parser.add_argument("--backbone", type=str, default="dinov3_vitl16_cellmap", help="Name of the DINOv3 backbone.")
     parser.add_argument("--embed_mode", type=str, choices=["pixel", "patch"], default="patch", help="Embedding mode (per pixel or per patch).")
     parser.add_argument("--patch_size", type=int, default=16, help="Patch size of the model (16 for all DINOv3 backbones).")
-    parser.add_argument("--input_size", type=int, default=512, help="Input size for the model.")
+    parser.add_argument("--input_size", type=int, default=480, help="Input size for the model.")
     parser.add_argument("--pretrained", action=argparse.BooleanOptionalAction, default=True, help="Use pretrained weights (default: True. Use --no-pretrained to disable)")
 
     args = parser.parse_args()
@@ -133,22 +133,10 @@ if __name__ == "__main__":
     )
     # ===================================
 
-    # === Multi-volume multi-query maxsim example ===
+    === Multi-volume multi-query maxsim example ===
     multi_volume_multi_query_maxsim = select_queries(
         query_dict, 
         ("jrc_mus-liver", "mus_liver_1", ["q1", "q2", "q3"]),
         ("jrc_jurkat-1", "jurkat_1_1", ["q1", "q4", "q6"]),
         ("jrc_mus-pancreas-3", "mus_pancreas_3_1", ["q1", "q2", "q3"])
     )
-
-    sim_maps = get_similarity_maps(multi_volume_multi_query_maxsim, embeddings_dict, crop_config, method="maxsim")
-
-    plot_retrieval_results(
-        sim_maps=sim_maps,
-        selected_queries_dict=multi_volume_multi_query_maxsim,
-        crop_config=crop_config,
-        base_data_dir=args.data_dir,
-        output_filename=f"visuals/multi_volume_multi_query_maxsim_{args.backbone}_{args.embed_mode}_{args.pretrained}_{args.input_size}.jpeg"
-    )
-    # ===================================
-
