@@ -114,20 +114,24 @@ def compute_similarity(query_vectors, target_embeddings, method="average"):
     N = query_vectors.shape[0]
 
     if method == "average":
-        # Average queries first, then compute similarity
+        # Average queries first: (N, D) -> (D,) -> (D, 1, 1)
         q_avg = query_vectors.mean(dim=0).view(D, 1, 1)
         sim_map = F.cosine_similarity(q_avg, target_embeddings, dim=0)
         
     elif method == "maxsim":
-        # Compute all similarities, then take the max at each pixel/patch
-        all_sims = []
-        for i in range(N):
-            q = query_vectors[i].view(D, 1, 1)
-            sim = F.cosine_similarity(q, target_embeddings, dim=0)
-            all_sims.append(sim)
-            
-        # Stack to (N, H, W) and take max along the N dimension
-        sim_map = torch.stack(all_sims).max(dim=0)[0]
+        # Vectorized MaxSim using broadcasting
+        # q: (N, D) -> (N, D, 1, 1)
+        q = query_vectors.view(N, D, 1, 1)
+        
+        # t: (D, H, W) -> (1, D, H, W)
+        t = target_embeddings.unsqueeze(0)
+        
+        # Compute all similarities in one pass
+        # Resulting shape before max: (N, H, W)
+        all_sims = F.cosine_similarity(q, t, dim=1)
+        
+        # Take max along the N dimension (dim=0 of the result)
+        sim_map = all_sims.max(dim=0)[0]
         
     else:
         raise ValueError("Method must be 'average' or 'maxsim'")
